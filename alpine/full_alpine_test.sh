@@ -10,7 +10,8 @@ import random
 OPCODES=[0x33,0x13,0x03,0x23,0x63,0x6F,0x67,0x37,0x17,0x0F,0x3B,0x1B]
 r=random.Random(42); s=OPCODES[:]; r.shuffle(s)
 m=dict(zip(OPCODES,s))
-with open('/tmp/isa_reverse_map','w') as f:
+import os; os.makedirs(os.path.dirname(os.environ.get('ISA_MAP','/etc/isa/map')), exist_ok=True)
+with open(os.environ.get('ISA_MAP','/etc/isa/map'),'w') as f:
     [f.write(f'{mp} {o}\n') for o,mp in m.items()]
 print('[MAPPING] ISA active seed=42')
 "
@@ -26,13 +27,14 @@ timeout 5 "$QEMU" /tmp/alpine_std 2>/dev/null | head -2
 
 echo ""
 echo "[TRIGGER] Firing ISA remap..."
-NEW_SEED=$RANDOM$RANDOM
+NEW_SEED=$(python3 -c "import os; print(int.from_bytes(os.urandom(4),'big'))")
 python3 -c "
 import random
 OPCODES=[0x33,0x13,0x03,0x23,0x63,0x6F,0x67,0x37,0x17,0x0F,0x3B,0x1B]
 r=random.Random($NEW_SEED); s=OPCODES[:]; r.shuffle(s)
 m=dict(zip(OPCODES,s))
-with open('/tmp/isa_reverse_map','w') as f:
+import os; os.makedirs(os.path.dirname(os.environ.get('ISA_MAP','/etc/isa/map')), exist_ok=True)
+with open(os.environ.get('ISA_MAP','/etc/isa/map'),'w') as f:
     [f.write(f'{mp} {o}\n') for o,mp in m.items()]
 print(f'  New seed: $NEW_SEED')
 "

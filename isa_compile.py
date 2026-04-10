@@ -15,18 +15,14 @@ import shutil
 
 # Auto-detect QEMU — works inside AppImage or standalone
 _script_dir = os.path.dirname(os.path.abspath(__file__))
-_appimage_qemu = os.path.join(_script_dir, "../bin/qemu-riscv64")
-_local_qemu    = os.path.expanduser(
-    "~/Desktop/risc_v_isa_modification/phase1/qemu-8.2.0/build/qemu-riscv64"
-)
-if os.path.exists(_appimage_qemu):
-    QEMU = os.path.realpath(_appimage_qemu)
-elif os.path.exists(_local_qemu):
-    QEMU = _local_qemu
-else:
-    QEMU = "qemu-riscv64"
+_candidates = [
+    os.path.join(_script_dir, "../bin/qemu-riscv64"),
+    os.path.join(_script_dir, "../phase1/qemu-8.2.0/build/qemu-riscv64"),
+    os.environ.get("QEMU", ""),
+]
+QEMU = next((os.path.realpath(p) for p in _candidates if p and os.path.exists(p)), "qemu-riscv64")
 
-REVERSE_MAP = "/tmp/isa_reverse_map"
+REVERSE_MAP = os.environ.get("ISA_MAP", "/etc/isa/map")
 OPCODES     = [0x33,0x13,0x03,0x23,0x63,0x6F,0x67,0x37,0x17,0x0F,0x3B,0x1B]
 PROTECTED   = {0x73}
 NAMES       = {
@@ -43,6 +39,7 @@ def generate_mapping(seed):
     return dict(zip(OPCODES, s))
 
 def write_reverse_map(mapping):
+    os.makedirs(os.path.dirname(REVERSE_MAP), exist_ok=True)
     with open(REVERSE_MAP, "w") as f:
         for orig, mapped in mapping.items():
             f.write(f"{mapped} {orig}\n")
@@ -170,7 +167,7 @@ def main():
         sys.exit(1)
     source = sys.argv[1]
     output = sys.argv[2]
-    seed   = int(sys.argv[3]) if len(sys.argv) > 3 else random.randint(0, 2**32)
+    seed   = int(sys.argv[3]) if len(sys.argv) > 3 else int.from_bytes(os.urandom(4), "big")
     print("\n" + "="*60)
     print("  RISC-V ISA-Aware Compiler (LLVM/Clang + ISA Mapper)")
     print("="*60)
