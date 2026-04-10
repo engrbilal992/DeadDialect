@@ -1,19 +1,28 @@
 #!/bin/bash
-# ISA Remapping - Central Config
-# Source from bash: source "$(dirname "$0")/../config.sh"
-# Python reads ISA_MAP via: os.environ.get("ISA_MAP", "/etc/isa/map")
+# ISA Remapping — Config Loader
+# Reads isa.env and resolves all relative paths to absolute.
+# Source this file in bash: source "$(dirname "$0")/../config.sh"
+# Python reads isa.env directly via lib/config.py
 
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="$BASE_DIR/isa.env"
 
-QEMU="$BASE_DIR/../phase1/qemu-8.2.0/build/qemu-riscv64"
-QEMU_SYSTEM="$BASE_DIR/../phase1/qemu-8.2.0/build/qemu-system-riscv64"
-QEMU_BIOS="$BASE_DIR/../phase1/qemu-8.2.0/pc-bios/opensbi-riscv64-generic-fw_dynamic.bin"
+# Load isa.env — strip comments and blank lines
+while IFS='=' read -r key val; do
+    [[ "$key" =~ ^#.*$ || -z "$key" ]] && continue
+    key="${key// /}"
+    val="${val// /}"
+    declare "$key=$val"
+done < "$ENV_FILE"
 
-export ISA_MAP="/etc/isa/map"
-
+# Resolve relative paths to absolute using BASE_DIR
+export ISA_MAP="$ISA_MAP"
+QEMU="$BASE_DIR/$QEMU_REL"
+QEMU_SYSTEM="$BASE_DIR/$QEMU_SYSTEM_REL"
+QEMU_BIOS="$BASE_DIR/$QEMU_BIOS_REL"
+ALPINE_IMG="$BASE_DIR/$ALPINE_IMG_REL"
+ALPINE_KERNEL="$BASE_DIR/$ALPINE_KERNEL_REL"
+ALPINE_INITRD="$BASE_DIR/$ALPINE_INITRD_REL"
+DEMO_DIR="$BASE_DIR/$DEMO_DIR_REL"
 ISA_COMPILE="$BASE_DIR/isa_compile.py"
 TRIGGER_SCRIPT="$BASE_DIR/trigger/isa_trigger.py"
-ALPINE_IMG="$BASE_DIR/alpine/alpine-riscv64.img"
-ALPINE_KERNEL="$BASE_DIR/alpine/kernel_extract/boot/vmlinux-6.19.11+deb14-riscv64"
-ALPINE_INITRD="$BASE_DIR/alpine/initramfs.cpio.gz"
-DEMO_DIR="$BASE_DIR/riscv_demo"

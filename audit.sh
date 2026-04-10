@@ -109,6 +109,14 @@ result=$(grep -r "tmp/isa_reverse_map" $ALL_SCRIPTS "$BASE_DIR/isa_compile.py" "
 perms=$(stat -c "%a" /etc/isa/map 2>/dev/null)
 [ "$perms" = "660" ] || [ "$perms" = "600" ] && check "C8: /etc/isa/map permissions ($perms)" "PASS" || check "C8: /etc/isa/map permissions" "FAIL — $perms"
 
+# isa.env: config file exists and readable by both bash and Python
+[ -f "$BASE_DIR/isa.env" ] && check "CONFIG: isa.env exists" "PASS" || check "CONFIG: isa.env missing" "FAIL"
+result=$(grep "ISA_MAP" "$BASE_DIR/isa.env" 2>/dev/null)
+[ -n "$result" ] && check "CONFIG: ISA_MAP in isa.env" "PASS" || check "CONFIG: ISA_MAP not in isa.env" "FAIL"
+[ -f "$BASE_DIR/lib/config.py" ] && check "CONFIG: lib/config.py exists" "PASS" || check "CONFIG: lib/config.py missing" "FAIL"
+result=$(python3 -c "import sys; sys.path.insert(0,'$BASE_DIR'); from lib.config import ISA_MAP; print(ISA_MAP)" 2>/dev/null)
+[ "$result" = "/etc/isa/map" ] && check "CONFIG: Python reads isa.env correctly ($result)" "PASS" || check "CONFIG: Python cannot read isa.env" "FAIL — got: $result"
+
 # N3: Git
 count=$(git -C "$BASE_DIR" log --oneline 2>/dev/null | wc -l)
 [ "$count" -ge 3 ] && check "N3: Git setup ($count commits)" "PASS" || check "N3: Git" "FAIL"
