@@ -144,8 +144,9 @@ import random
 OPCODES=[0x33,0x13,0x03,0x23,0x63,0x6F,0x67,0x37,0x17,0x0F,0x3B,0x1B]
 r=random.Random(42); s=OPCODES[:]; r.shuffle(s)
 m=dict(zip(OPCODES,s))
-with open('/tmp/isa_reverse_map','w') as f:
-    [f.write(f'{mp} {o}\n') for o,mp in m.items()]
+import os; map_path=os.environ.get('ISA_MAP','/etc/isa/map'); os.makedirs(os.path.dirname(map_path),exist_ok=True)
+with open(map_path,'w') as f:
+    [f.write(f'{mapped} {o}\n') for o,mapped in m.items()]
 "
 
 clang --target=riscv64-linux-gnu -nostdlib -static -fuse-ld=lld -O1 \
