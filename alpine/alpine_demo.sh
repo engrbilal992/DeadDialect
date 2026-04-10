@@ -30,9 +30,9 @@ import random
 OPCODES=[0x33,0x13,0x03,0x23,0x63,0x6F,0x67,0x37,0x17,0x0F,0x3B,0x1B]
 r=random.Random($NEW_SEED); s=OPCODES[:]; r.shuffle(s)
 m=dict(zip(OPCODES,s))
-import os; mp=os.environ.get('ISA_MAP','/etc/isa/map'); os.makedirs(os.path.dirname(mp),exist_ok=True)
-with open(mp,'w') as f:
-    [f.write(f'{mp} {o}\n') for o,mp in m.items()]
+import os; map_path=os.environ.get('ISA_MAP','/etc/isa/map'); os.makedirs(os.path.dirname(map_path),exist_ok=True)
+with open(map_path,'w') as f:
+    [f.write(f'{mapped} {o}\n') for o,mapped in m.items()]
 print('    New seed: $NEW_SEED')
 "
 
