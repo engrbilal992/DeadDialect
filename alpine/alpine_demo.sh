@@ -24,13 +24,14 @@ timeout 5 "$QEMU" /tmp/alpine_advanced 2>/dev/null
 
 # Step 3: Trigger remap
 echo -e "\n${RED}[3] TRIGGER FIRED — ISA remapped to new seed...${NC}"
-NEW_SEED=$RANDOM$RANDOM
+NEW_SEED=$(python3 -c "import os; print(int.from_bytes(os.urandom(4),'big'))")
 python3 -c "
 import random
 OPCODES=[0x33,0x13,0x03,0x23,0x63,0x6F,0x67,0x37,0x17,0x0F,0x3B,0x1B]
 r=random.Random($NEW_SEED); s=OPCODES[:]; r.shuffle(s)
 m=dict(zip(OPCODES,s))
-with open('/tmp/isa_reverse_map','w') as f:
+import os; mp=os.environ.get('ISA_MAP','/etc/isa/map'); os.makedirs(os.path.dirname(mp),exist_ok=True)
+with open(mp,'w') as f:
     [f.write(f'{mp} {o}\n') for o,mp in m.items()]
 print('    New seed: $NEW_SEED')
 "
