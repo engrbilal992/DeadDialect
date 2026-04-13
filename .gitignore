@@ -1,13 +1,34 @@
-# Compiled RISC-V binaries
+# Compiled RISC-V binaries (no extension = compiled)
 **/riscv_demo/advanced
-**/riscv_demo/advanced_*
+**/riscv_demo/advanced_bootA
+**/riscv_demo/advanced_bootB
+**/riscv_demo/advanced_booted
+**/riscv_demo/advanced_llvm
+**/riscv_demo/advanced_llvm_standard
 **/riscv_demo/hello
-**/riscv_demo/hello_*
+**/riscv_demo/hello_bootA
+**/riscv_demo/hello_bootB
+**/riscv_demo/hello_booted
+**/riscv_demo/hello_clang
+**/riscv_demo/hello_cpp
+**/riscv_demo/hello_llvm
+**/riscv_demo/hello_llvm_standard
+**/riscv_demo/hello_gcc_original
+**/riscv_demo/hello_gcc_remapped
 **/riscv_demo/complex
-**/riscv_demo/complex_*
+**/riscv_demo/complex_bootA
+**/riscv_demo/complex_booted
+**/riscv_demo/complex_llvm
+**/riscv_demo/complex_llvm_standard
 **/riscv_demo/malware_sim
-**/riscv_demo/malware_*
-**/riscv_demo/test_*
+**/riscv_demo/malware_bootA
+**/riscv_demo/malware_bootA_standard
+**/riscv_demo/test_bin
+**/riscv_demo/test_bin_standard
+**/riscv_demo/test_c
+**/riscv_demo/test_c_standard
+**/riscv_demo/test_cpp
+**/riscv_demo/test_cpp_standard
 **/riscv_demo/*.ll
 **/riscv_demo/*.s
 
@@ -39,7 +60,6 @@
 *.webm
 *.m4a
 *.AppImage
-*.pdf
 
 # QEMU binary symlink
 qemu-riscv64
