@@ -1,0 +1,33 @@
+# Compiled RISC-V binaries
+**/riscv_demo/advanced
+**/riscv_demo/advanced_*
+**/riscv_demo/hello
+**/riscv_demo/hello_*
+**/riscv_demo/complex
+**/riscv_demo/complex_*
+**/riscv_demo/malware_sim
+**/riscv_demo/malware_*
+**/riscv_demo/test_*
+**/riscv_demo/*.ll
+**/riscv_demo/*.s
+
+# Large binary/image files
+*.img
+*.tar.gz
+*.deb
+*.xz
+*.cpio.gz
+*.zip
+*.webm
+*.m4a
+*.AppImage
+
+# Symlinks to QEMU binary
+qemu-riscv64
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Temp files
+/tmp/
