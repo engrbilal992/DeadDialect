@@ -124,10 +124,10 @@ result_random=$(grep -rn "RANDOM" "$BASE_DIR"/*.sh "$BASE_DIR"/*.py 2>/dev/null 
     check "No weak \$RANDOM in scripts" "FAIL" "Found: $result_random"
 
 perms=$(stat -c "%a" "$ISA_SYSCALL_KEYRING" 2>/dev/null)
-if [ "$perms" = "660" ] || [ "$perms" = "600" ]; then
+if [ "$perms" = "640" ] || [ "$perms" = "660" ] || [ "$perms" = "600" ]; then
     check "syscall_keyring permissions ($perms)" "PASS"
 else
-    check "syscall_keyring permissions" "FAIL" "Expected 660 or 600, got: $perms — run bash build.sh"
+    check "syscall_keyring permissions" "FAIL" "Expected 640, got: $perms — run bash build.sh"
 fi
 
 # No hardcoded paths (excluding the audit check line itself)
@@ -158,6 +158,7 @@ if [ ! -f "$QEMU" ]; then
 else
     # Clear keyring for clean state
     sudo truncate -s 0 "$ISA_SYSCALL_KEYRING"
+    sudo truncate -s 0 "/etc/isa/map"
 
     # Compile test binaries
     echo -e "  ${YELLOW}Compiling test binaries...${NC}"

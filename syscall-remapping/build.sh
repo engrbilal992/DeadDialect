@@ -34,13 +34,13 @@ sudo mkdir -p /etc/isa
 # syscall keyring (Phase 3)
 sudo touch /etc/isa/syscall_keyring
 sudo chown root:$(whoami) /etc/isa/syscall_keyring
-sudo chmod 660 /etc/isa/syscall_keyring
+sudo chmod 640 /etc/isa/syscall_keyring
 # opcode map (Phase 1/2)
 sudo touch /etc/isa/map
 sudo chown root:$(whoami) /etc/isa/map
-sudo chmod 660 /etc/isa/map
-echo -e "${GREEN}    /etc/isa/syscall_keyring (660) ✓${NC}"
-echo -e "${GREEN}    /etc/isa/map (660) ✓${NC}"
+sudo chmod 640 /etc/isa/map
+echo -e "${GREEN}    /etc/isa/syscall_keyring (640) ✓${NC}"
+echo -e "${GREEN}    /etc/isa/map (640) ✓${NC}"
 
 # ── STEP 3: Download QEMU 8.2.0 source if needed ─────────────
 echo -e "\n${CYAN}[3/7] Setting up QEMU 8.2.0 source...${NC}"
