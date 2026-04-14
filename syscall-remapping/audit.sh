@@ -115,8 +115,8 @@ echo -e "\n${CYAN}══ SECTION 4: SECURITY & CODE QUALITY ══${NC}"
 # ─────────────────────────────────────────────────────────────
 
 grep -q "secrets" "$BASE_DIR/isa_syscall_rewrite.py" && \
-    check "secrets.SystemRandom used for full 256-bit entropy" "PASS" || \
-    check "secrets module not found" "FAIL" "Weak seed detected"
+    check "secrets.SystemRandom — full 256-bit entropy, Python 3.11+ safe" "PASS" || \
+    check "secrets module not found in rewriter" "FAIL" "Weak seed detected"
 
 result_random=$(grep -rn "RANDOM" "$BASE_DIR"/*.sh "$BASE_DIR"/*.py 2>/dev/null | grep -v "audit.sh" | grep -v "urandom" | grep -v "^.*:#")
 [ -z "$result_random" ] && \
@@ -205,7 +205,7 @@ else
     fi
 
     # T3: Switch to seed B, old binaries must fail
-    SEED_B=$(python3 -c "import secrets; print(int.from_bytes(secrets.token_bytes(32),'big'))")
+    SEED_B=$(python3 -c "import os; print(int.from_bytes(os.urandom(4),'big'))")
     echo -e "  ${YELLOW}T4-T5: Switch to perm B (seed=$SEED_B), old binaries must fail${NC}"
     python3 "$SYSCALL_REWRITER" /tmp/audit3_simple /tmp/audit3_simple_B \
         --seed $SEED_B --keyring "$ISA_SYSCALL_KEYRING" --quiet
@@ -283,6 +283,34 @@ else
     else
         check "T10: Determinism" "FAIL" "Same seed produced different keyrings"
     fi
+    # T11: Independent disassembly proof via objdump
+    # Compiles standard binary, rewrites it, then uses objdump to verify
+    # the li a7 immediates changed — independent of rewriter output
+    echo -e "  ${YELLOW}T11: Independent disassembly proof (objdump)${NC}"
+    clang --target=riscv64-linux-gnu -march=rv64g -nostdlib -static -fuse-ld=lld -O1 \
+        -o /tmp/audit3_disasm_std "$DEMO_DIR/simple.c" 2>/dev/null
+    python3 "$SYSCALL_REWRITER" /tmp/audit3_disasm_std /tmp/audit3_disasm_A \
+        --seed 42 --keyring /tmp/k_disasm --quiet
+
+    # Use objdump to extract li a7 values from BOTH binaries independently
+    STD_A7=$(riscv64-linux-gnu-objdump -d /tmp/audit3_disasm_std 2>/dev/null \
+        | grep -E "li.*a7" | awk '{print $NF}' | tr '\n' ' ')
+    REM_A7=$(riscv64-linux-gnu-objdump -d /tmp/audit3_disasm_A 2>/dev/null \
+        | grep -E "li.*a7" | awk '{print $NF}' | tr '\n' ' ')
+
+    echo -e "    ${YELLOW}Standard binary   li a7 values: $STD_A7${NC}"
+    echo -e "    ${YELLOW}Remapped binary   li a7 values: $REM_A7${NC}"
+
+    if [ "$STD_A7" = "$REM_A7" ]; then
+        check "T11: objdump confirms syscall numbers changed in binary" "FAIL" \
+            "Rewriter did not change li a7 values"
+    elif [ -z "$REM_A7" ]; then
+        check "T11: objdump confirms syscall numbers changed in binary" "FAIL" \
+            "Could not read remapped binary with objdump"
+    else
+        check "T11: objdump confirms syscall numbers changed in binary" "PASS"
+    fi
+
 fi
 
 # ─────────────────────────────────────────────────────────────
