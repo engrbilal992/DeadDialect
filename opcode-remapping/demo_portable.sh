@@ -65,19 +65,18 @@ echo -e "\n${CYAN}════════════════════�
 echo -e "${CYAN}  PHASE 1: BOOT A (seed=42)${NC}"
 echo -e "${CYAN}═══════════════════════════════════════${NC}"
 
-python3 -c "
+python3 - << 'PYEOF2'
 import random, subprocess
 OPCODES=[0x33,0x13,0x03,0x23,0x63,0x6F,0x67,0x37,0x17,0x0F,0x3B,0x1B]
 r=random.Random(42); s=OPCODES[:]; r.shuffle(s)
 mapping=dict(zip(OPCODES,s))
-content=''.join(f'{mp} {o}
-' for o,mp in mapping.items())
+lines = "".join(str(mp)+" "+str(o)+"\n" for o,mp in mapping.items())
 try:
-    open('/etc/isa/map','w').write(content)
+    open("/etc/isa/map","w").write(lines)
 except PermissionError:
-    subprocess.run(['sudo','tee','/etc/isa/map'],input=content,text=True,capture_output=True)
-print('Boot A mapping generated (seed=42)')
-"
+    subprocess.run(["sudo","tee","/etc/isa/map"],input=lines,text=True,capture_output=True)
+print("Boot A mapping generated (seed=42)")
+PYEOF2
 
 echo -e "\n${YELLOW}[1] Compiling advanced test suite for Boot A...${NC}"
 python3 "$ISA_COMPILE" "$SRC_DIR/advanced.c" "$OUT_DIR/advanced_bootA" 42 >/dev/null 2>/dev/null
@@ -101,19 +100,19 @@ echo -e "${CYAN}═════════════════════�
 sleep 1
 NEW_SEED=$(python3 -c "import os; print(int.from_bytes(os.urandom(4),'big'))")
 echo -e "${GREEN}  New boot seed: $NEW_SEED${NC}"
-python3 -c "
-import random, subprocess
+python3 - $NEW_SEED << 'PYEOF2'
+import random, subprocess, sys
+seed = int(sys.argv[1])
 OPCODES=[0x33,0x13,0x03,0x23,0x63,0x6F,0x67,0x37,0x17,0x0F,0x3B,0x1B]
-r=random.Random($NEW_SEED); s=OPCODES[:]; r.shuffle(s)
+r=random.Random(seed); s=OPCODES[:]; r.shuffle(s)
 m=dict(zip(OPCODES,s))
-content=''.join(f'{mp} {o}
-' for o,mp in m.items())
+lines = "".join(str(mp)+" "+str(o)+"\n" for o,mp in m.items())
 try:
-    open('/etc/isa/map','w').write(content)
+    open("/etc/isa/map","w").write(lines)
 except PermissionError:
-    subprocess.run(['sudo','tee','/etc/isa/map'],input=content,text=True,capture_output=True)
-print(f'Boot B mapping generated (seed=$NEW_SEED)')
-"
+    subprocess.run(["sudo","tee","/etc/isa/map"],input=lines,text=True,capture_output=True)
+print("Boot B mapping generated (seed="+str(seed)+")")
+PYEOF2
 
 echo -e "\n${CYAN}═══════════════════════════════════════${NC}"
 echo -e "${CYAN}  PHASE 3: BOOT B — Security Test${NC}"

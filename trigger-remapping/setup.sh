@@ -42,12 +42,24 @@ if [ ! -f "$PHASE1/qemu-8.2.0/build/qemu-riscv64" ] || [ ! -f "$PHASE1/qemu-8.2.
     ISA_MAPPING_DEST="$PHASE1/qemu-8.2.0/target/riscv/isa_mapping.h"
     cp "$PHASE2/isa_mapping.h" "$ISA_MAPPING_DEST"
     TRANSLATE_C="$PHASE1/qemu-8.2.0/target/riscv/translate.c"
-    if ! grep -q "isa_mapping.h" "$TRANSLATE_C"; then
-        sed -i '"'"'s|#include "instmap.h"|#include "instmap.h"\n#include "isa_mapping.h"|'"'"' "$TRANSLATE_C"
-    fi
-    if ! grep -q "isa_decode_instruction" "$TRANSLATE_C"; then
-        sed -i '"'"'s/ctx->opcode = opcode32;/ctx->opcode = opcode32;\n        #ifdef CONFIG_LINUX_USER\n        opcode32 = isa_decode_instruction(opcode32);\n        ctx->opcode = opcode32;\n        #endif/'"'"' "$TRANSLATE_C"
-    fi
+    python3 - "$TRANSLATE_C" << PYEOF
+import sys
+path = sys.argv[1]
+content = open(path).read()
+if "isa_mapping.h" not in content:
+    content = content.replace(
+        '#include "instmap.h"',
+        '#include "instmap.h"\n#include "isa_mapping.h"'
+    )
+if "isa_decode_instruction" not in content:
+    content = content.replace(
+        "ctx->opcode = opcode32;",
+        "ctx->opcode = opcode32;\n        #ifdef CONFIG_LINUX_USER\n        opcode32 = isa_decode_instruction(opcode32);\n        ctx->opcode = opcode32;\n        #endif",
+        1
+    )
+open(path, "w").write(content)
+print("Patch applied")
+PYEOF
     cd "$PHASE1/qemu-8.2.0"
     mkdir -p build && cd build
     ../configure \
