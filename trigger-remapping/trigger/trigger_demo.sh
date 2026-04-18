@@ -17,11 +17,15 @@ echo -e "${NC}"
 # Source shared mapping generator
 source "$(dirname "$(readlink -f "$0")")/../lib/generate_mapping.sh"
 
+# Clear syscall keyring — prevent Phase 3 keyring interfering with Phase 2 QEMU
+sudo truncate -s 0 /etc/isa/syscall_keyring 2>/dev/null || true
+
 # Phase 1 — Compile under initial mapping
 echo -e "${CYAN}  PHASE 1: Initial Mapping${NC}"
 
 SEED=42
 generate_mapping $SEED
+sleep 1
 
 echo -e "\n${YELLOW}[1] Compiling advanced program under seed=$SEED...${NC}"
 python3 "$ISA_COMPILE" "$DEMO_DIR/advanced.c" /tmp/trigger_advanced $SEED >/dev/null 2>&1
@@ -62,6 +66,7 @@ sleep 1
 # FIX C5: os.urandom for secure seed — no more $RANDOM$RANDOM
 NEW_SEED=$(python3 -c "import os; print(int.from_bytes(os.urandom(4),'big'))")
 generate_mapping $NEW_SEED
+sleep 1
 echo -e "${GREEN}  ISA remapped (seed=$NEW_SEED). Old binaries now invalid.${NC}"
 
 # Phase 3 — Test old binaries

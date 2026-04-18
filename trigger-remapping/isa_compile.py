@@ -40,9 +40,13 @@ def generate_mapping(seed):
 
 def write_reverse_map(mapping):
     os.makedirs(os.path.dirname(REVERSE_MAP), exist_ok=True)
-    with open(REVERSE_MAP, "w") as f:
-        for orig, mapped in mapping.items():
-            f.write(f"{mapped} {orig}\n")
+    content = "".join(f"{mapped} {orig}\n" for orig, mapped in mapping.items())
+    try:
+        with open(REVERSE_MAP, "w") as f:
+            f.write(content)
+    except PermissionError:
+        subprocess.run(["sudo", "tee", REVERSE_MAP],
+                       input=content, text=True, capture_output=True, check=True)
 
 def compile_source(source, output_std):
     ext = os.path.splitext(source)[1].lower()
@@ -66,6 +70,7 @@ def compile_source(source, output_std):
 
     print(f"[LLVM] Compiling {source} as {lang} with Clang (RISC-V target)...")
     cmd = [compiler, "--target=riscv64-linux-gnu",
+           "-march=rv64g",  # disable RVC compressed instructions
            "-nostdlib", "-static", "-fuse-ld=lld", "-O1",
            "-o", output_std, source]
     result = subprocess.run(cmd, capture_output=True, text=True)
@@ -179,6 +184,15 @@ def main():
     write_reverse_map(mapping)
     print(f"\n  Reverse map written -> {REVERSE_MAP}")
     remap_binary(std_binary, output, mapping)
+    # Force mtime change so QEMU reloads the map on next run
+    import time
+    time.sleep(1)
+    # Touch the map file to ensure mtime is newer than QEMU's cached value
+    try:
+        import pathlib
+        pathlib.Path(REVERSE_MAP).touch()
+    except Exception:
+        pass
     print(f"\n  Testing {output} with patched QEMU...")
     ret = os.system(f"{QEMU} {output} 2>/dev/null")
     status = "SUCCESS ✓" if ret == 0 else "FAILED ✗"

@@ -31,12 +31,13 @@ echo -e "\n${CYAN}[1b] Setting up /etc/isa/map...${NC}"
 sudo mkdir -p /etc/isa
 sudo touch /etc/isa/map
 sudo chown root:$(whoami) /etc/isa/map
-sudo chmod 660 /etc/isa/map
+sudo chown root:$(whoami) /etc/isa/map
+sudo chmod 640 /etc/isa/map
 echo -e "${GREEN}    /etc/isa/map ready ✓${NC}"
 
 # Step 2: Build patched QEMU
 echo -e "\n${CYAN}[2/7] Building patched QEMU 8.2...${NC}"
-if [ ! -f "$PHASE1/qemu-8.2.0/build/qemu-riscv64" ]; then
+if [ ! -f "$PHASE1/qemu-8.2.0/build/qemu-riscv64" ] || [ ! -f "$PHASE1/qemu-8.2.0/build/qemu-system-riscv64" ]; then
     cd "$PHASE1/qemu-8.2.0"
     mkdir -p build && cd build
     ../configure \

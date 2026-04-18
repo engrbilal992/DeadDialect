@@ -5,11 +5,11 @@
 
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 
-# Auto-detect QEMU
+# Auto-detect QEMU — relative paths only, no hardcoded Desktop
 if [ -f "$SCRIPT_DIR/../bin/qemu-riscv64" ]; then
     QEMU="$(realpath "$SCRIPT_DIR/../bin/qemu-riscv64")"
-elif [ -f "$HOME/Desktop/risc_v_isa_modification/qemu-8.2.0/build/qemu-riscv64" ]; then
-    QEMU="$HOME/Desktop/risc_v_isa_modification/qemu-8.2.0/build/qemu-riscv64"
+elif [ -f "$SCRIPT_DIR/../phase1/qemu-8.2.0/build/qemu-riscv64" ]; then
+    QEMU="$(realpath "$SCRIPT_DIR/../phase1/qemu-8.2.0/build/qemu-riscv64")"
 else
     QEMU="qemu-riscv64"
 fi
@@ -18,25 +18,28 @@ fi
 if [ -f "$SCRIPT_DIR/converter.m4a" ]; then
     SONG="$SCRIPT_DIR/converter.m4a"
 else
-    SONG="$HOME/Desktop/risc_v_isa_modification/Mega Drive - Converter ( slowed + reverb ).m4a"
+    SONG=""
 fi
 
-# Auto-detect isa_compile.py
+# Auto-detect isa_compile.py — relative paths only
 if [ -f "$SCRIPT_DIR/isa_compile.py" ]; then
     ISA_COMPILE="$SCRIPT_DIR/isa_compile.py"
+elif [ -f "$SCRIPT_DIR/../trigger-remapping/isa_compile.py" ]; then
+    ISA_COMPILE="$(realpath "$SCRIPT_DIR/../trigger-remapping/isa_compile.py")"
 else
-    ISA_COMPILE="$HOME/Desktop/risc_v_isa_modification/isa_compile.py"
+    echo "ERROR: isa_compile.py not found"; exit 1
 fi
 
-# Auto-detect source files
+# Auto-detect source files — relative paths only
 if [ -f "$SCRIPT_DIR/advanced.c" ]; then
     SRC_DIR="$SCRIPT_DIR"
-    OUT_DIR="/tmp/isa_demo_$$"
-    mkdir -p "$OUT_DIR"
+elif [ -f "$SCRIPT_DIR/riscv_demo/advanced.c" ]; then
+    SRC_DIR="$SCRIPT_DIR/riscv_demo"
 else
-    SRC_DIR="$HOME/Desktop/risc_v_isa_modification/riscv_demo"
-    OUT_DIR="$HOME/Desktop/risc_v_isa_modification/riscv_demo"
+    SRC_DIR="$(realpath "$SCRIPT_DIR/../trigger-remapping/riscv_demo" 2>/dev/null || echo "$SCRIPT_DIR")"
 fi
+OUT_DIR="/tmp/isa_demo_$$"
+mkdir -p "$OUT_DIR"
 
 GREEN='\033[0;32m'; RED='\033[0;31m'
 CYAN='\033[0;36m';  YELLOW='\033[1;33m'; NC='\033[0m'
@@ -48,10 +51,12 @@ echo "  Full System Demo — Milestone 3"
 echo "████████████████████████████████████████████████████████"
 echo -e "${NC}"
 
-echo -e "${YELLOW}[MUSIC] Starting Converter...${NC}"
-ffplay -nodisp -autoexit -loglevel quiet "$SONG" &
-SONG_PID=$!
-sleep 2
+if [ -n "$SONG" ] && [ -f "$SONG" ]; then
+    echo -e "${YELLOW}[MUSIC] Starting Converter...${NC}"
+    ffplay -nodisp -autoexit -loglevel quiet "$SONG" &
+    SONG_PID=$!
+    sleep 2
+fi
 
 echo -e "\n${CYAN}═══════════════════════════════════════${NC}"
 echo -e "${CYAN}  PHASE 1: BOOT A (seed=42)${NC}"
@@ -62,7 +67,7 @@ import random
 OPCODES=[0x33,0x13,0x03,0x23,0x63,0x6F,0x67,0x37,0x17,0x0F,0x3B,0x1B]
 r=random.Random(42); s=OPCODES[:]; r.shuffle(s)
 mapping=dict(zip(OPCODES,s))
-with open('/tmp/isa_reverse_map','w') as f:
+with open('/etc/isa/map','w') as f:
     [f.write(f'{mp} {o}\n') for o,mp in mapping.items()]
 print('Boot A mapping generated (seed=42)')
 "
@@ -87,14 +92,14 @@ echo -e "\n${CYAN}════════════════════�
 echo -e "${CYAN}  PHASE 2: SYSTEM REBOOT${NC}"
 echo -e "${CYAN}═══════════════════════════════════════${NC}"
 sleep 1
-NEW_SEED=$RANDOM$RANDOM
+NEW_SEED=$(python3 -c "import os; print(int.from_bytes(os.urandom(4),'big'))")
 echo -e "${GREEN}  New boot seed: $NEW_SEED${NC}"
 python3 -c "
 import random
 OPCODES=[0x33,0x13,0x03,0x23,0x63,0x6F,0x67,0x37,0x17,0x0F,0x3B,0x1B]
 r=random.Random($NEW_SEED); s=OPCODES[:]; r.shuffle(s)
 m=dict(zip(OPCODES,s))
-with open('/tmp/isa_reverse_map','w') as f:
+with open('/etc/isa/map','w') as f:
     [f.write(f'{mp} {o}\n') for o,mp in m.items()]
 print(f'Boot B mapping generated (seed=$NEW_SEED)')
 "
