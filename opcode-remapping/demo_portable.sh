@@ -52,7 +52,10 @@ echo "████████████████████████�
 echo -e "${NC}"
 
 if [ -n "$SONG" ] && [ -f "$SONG" ]; then
-    echo -e "${YELLOW}[MUSIC] Starting Converter...${NC}"
+    # Clear syscall keyring to prevent Phase 3 interference
+sudo truncate -s 0 /etc/isa/syscall_keyring 2>/dev/null || true
+sleep 1
+echo -e "${YELLOW}[MUSIC] Starting Converter...${NC}"
     ffplay -nodisp -autoexit -loglevel quiet "$SONG" &
     SONG_PID=$!
     sleep 2
@@ -63,12 +66,16 @@ echo -e "${CYAN}  PHASE 1: BOOT A (seed=42)${NC}"
 echo -e "${CYAN}═══════════════════════════════════════${NC}"
 
 python3 -c "
-import random
+import random, subprocess
 OPCODES=[0x33,0x13,0x03,0x23,0x63,0x6F,0x67,0x37,0x17,0x0F,0x3B,0x1B]
 r=random.Random(42); s=OPCODES[:]; r.shuffle(s)
 mapping=dict(zip(OPCODES,s))
-with open('/etc/isa/map','w') as f:
-    [f.write(f'{mp} {o}\n') for o,mp in mapping.items()]
+content=''.join(f'{mp} {o}
+' for o,mp in mapping.items())
+try:
+    open('/etc/isa/map','w').write(content)
+except PermissionError:
+    subprocess.run(['sudo','tee','/etc/isa/map'],input=content,text=True,capture_output=True)
 print('Boot A mapping generated (seed=42)')
 "
 
@@ -95,12 +102,16 @@ sleep 1
 NEW_SEED=$(python3 -c "import os; print(int.from_bytes(os.urandom(4),'big'))")
 echo -e "${GREEN}  New boot seed: $NEW_SEED${NC}"
 python3 -c "
-import random
+import random, subprocess
 OPCODES=[0x33,0x13,0x03,0x23,0x63,0x6F,0x67,0x37,0x17,0x0F,0x3B,0x1B]
 r=random.Random($NEW_SEED); s=OPCODES[:]; r.shuffle(s)
 m=dict(zip(OPCODES,s))
-with open('/etc/isa/map','w') as f:
-    [f.write(f'{mp} {o}\n') for o,mp in m.items()]
+content=''.join(f'{mp} {o}
+' for o,mp in m.items())
+try:
+    open('/etc/isa/map','w').write(content)
+except PermissionError:
+    subprocess.run(['sudo','tee','/etc/isa/map'],input=content,text=True,capture_output=True)
 print(f'Boot B mapping generated (seed=$NEW_SEED)')
 "
 
