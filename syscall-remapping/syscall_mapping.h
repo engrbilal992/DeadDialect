@@ -12,13 +12,13 @@
 
 static int syscall_reverse_map[SYSCALL_COUNT];
 static time_t syscall_map_mtime = 0;
-static int syscall_map_initialized = 0;
+/* No initialized flag needed — mtime starts at 0, no real file has mtime 0 */
 
 static void syscall_mapping_reload(void)
 {
     struct stat st;
     if (stat(SYSCALL_KEYRING_PATH, &st) != 0) return;
-    if (syscall_map_initialized && st.st_mtime == syscall_map_mtime) return;
+    if (st.st_mtime == syscall_map_mtime) return;
 
     /* Identity map by default */
     for (int i = 0; i < SYSCALL_COUNT; i++)
@@ -37,7 +37,6 @@ static void syscall_mapping_reload(void)
     fclose(f);
     /* Update mtime only after successful read — fixes race condition */
     syscall_map_mtime = st.st_mtime;
-    syscall_map_initialized = 1;
 }
 
 static inline int syscall_translate(int num)

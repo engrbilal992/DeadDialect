@@ -89,6 +89,15 @@ grep -q "syscall_translate" "$QEMU_SYSCALL_C" 2>/dev/null && \
     check "QEMU syscall.c has translation hook" "PASS" || \
     check "QEMU syscall.c has translation hook" "FAIL" "Run bash build.sh to patch"
 
+# Verify opcode patch is NOT active — it interferes with syscall remapping
+TRANSLATE_C="$PHASE1/qemu-8.2.0/target/riscv/translate.c"
+if grep -q "isa_decode_instruction" "$TRANSLATE_C" 2>/dev/null; then
+    check "Opcode patch absent from translate.c" "FAIL" \
+        "isa_decode_instruction found — rebuild QEMU without opcode patch"
+else
+    check "Opcode patch absent from translate.c" "PASS"
+fi
+
 grep -q "syscall_mapping.h" "$QEMU_SYSCALL_C" 2>/dev/null && \
     check "syscall_mapping.h included in syscall.c" "PASS" || \
     check "syscall_mapping.h included in syscall.c" "FAIL" "Run bash build.sh"

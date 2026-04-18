@@ -34,13 +34,7 @@ sudo mkdir -p /etc/isa
 # syscall keyring (Phase 3)
 sudo touch /etc/isa/syscall_keyring
 sudo chown root:$(whoami) /etc/isa/syscall_keyring
-sudo chmod 640 /etc/isa/syscall_keyring
-# opcode map (Phase 1/2)
-sudo touch /etc/isa/map
-sudo chown root:$(whoami) /etc/isa/map
-sudo chmod 640 /etc/isa/map
-echo -e "${GREEN}    /etc/isa/syscall_keyring (640) ✓${NC}"
-echo -e "${GREEN}    /etc/isa/map (640) ✓${NC}"
+sudo chmod 600 /etc/isa/syscall_keyring
 
 # ── STEP 3: Download QEMU 8.2.0 source if needed ─────────────
 echo -e "\n${CYAN}[3/7] Setting up QEMU 8.2.0 source...${NC}"
@@ -62,43 +56,10 @@ fi
 # ── STEP 4: Apply ALL patches to QEMU ────────────────────────
 echo -e "\n${CYAN}[4/7] Applying patches to QEMU...${NC}"
 
-# --- Patch A: isa_mapping.h (opcode remapping — Phase 1/2) ---
-ISA_MAPPING_SRC="$BASE_DIR/isa_mapping.h"
-ISA_MAPPING_DEST="$QEMU_SRC/target/riscv/isa_mapping.h"
+# Phase 3 applies syscall remapping only — opcode patch removed
+# (opcode patch interferes with syscall remapping when /etc/isa/map is non-empty)
 
-if [ ! -f "$ISA_MAPPING_SRC" ]; then
-    echo -e "  ${YELLOW}isa_mapping.h not in phase3, checking phase2...${NC}"
-    ISA_MAPPING_SRC="$BASE_DIR/../phase2/trigger-remapping/isa_mapping.h"
-fi
-
-if [ -f "$ISA_MAPPING_SRC" ]; then
-    cp "$ISA_MAPPING_SRC" "$ISA_MAPPING_DEST"
-    SRC_SUM=$(sha256sum "$ISA_MAPPING_SRC" | cut -d' ' -f1)
-    DST_SUM=$(sha256sum "$ISA_MAPPING_DEST" | cut -d' ' -f1)
-    [ "$SRC_SUM" = "$DST_SUM" ] && \
-        echo -e "${GREEN}    isa_mapping.h copied & verified ✓${NC}" || \
-        { echo -e "${RED}    isa_mapping.h checksum mismatch ✗${NC}"; exit 1; }
-
-    TRANSLATE_C="$QEMU_SRC/target/riscv/translate.c"
-    if ! grep -q "isa_mapping.h" "$TRANSLATE_C"; then
-        # Find instmap.h include line and add ours after it
-        sed -i 's|#include "instmap.h"|#include "instmap.h"\n#include "isa_mapping.h"|' "$TRANSLATE_C"
-        echo -e "${GREEN}    isa_mapping.h included in translate.c ✓${NC}"
-    else
-        echo -e "${GREEN}    translate.c already includes isa_mapping.h ✓${NC}"
-    fi
-
-    if ! grep -q "isa_decode_instruction" "$TRANSLATE_C"; then
-        sed -i 's/ctx->opcode = opcode32;/ctx->opcode = opcode32;\n        #ifdef CONFIG_LINUX_USER\n        opcode32 = isa_decode_instruction(opcode32);\n        ctx->opcode = opcode32;\n        #endif/' "$TRANSLATE_C"
-        echo -e "${GREEN}    isa_decode_instruction hook added to translate.c ✓${NC}"
-    else
-        echo -e "${GREEN}    translate.c already has decode hook ✓${NC}"
-    fi
-else
-    echo -e "${YELLOW}    isa_mapping.h not found — skipping opcode patch${NC}"
-fi
-
-# --- Patch B: syscall_mapping.h (syscall remapping — Phase 3) ---
+# --- Patch: syscall_mapping.h (syscall remapping — Phase 3) ---
 cp "$SYSCALL_MAPPING_H" "$QEMU_SYSCALL_H_DEST"
 SRC_SUM=$(sha256sum "$SYSCALL_MAPPING_H" | cut -d' ' -f1)
 DST_SUM=$(sha256sum "$QEMU_SYSCALL_H_DEST" | cut -d' ' -f1)
