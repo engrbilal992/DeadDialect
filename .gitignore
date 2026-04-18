@@ -67,3 +67,10 @@ qemu-riscv64
 # Python cache
 __pycache__/
 *.pyc
+phase1/
+*.pdf
+register-remapping/register-remapping/
+__pycache__/
+*.pyc
+*.img
+*.cpio.gz
