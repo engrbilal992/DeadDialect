@@ -32,7 +32,7 @@ for f in isa_integrate.py register_mapping.h syscall_mapping.h \
           isa_remap_ldso.h isa.env config.sh build.sh demo.sh \
           audit.sh CHANGELOG.md lib/config.py \
           riscv_demo/simple.S riscv_demo/complex.S \
-          trigger/trigger_demo.sh; do
+          trigger/trigger_demo.sh           alpine/boot_alpine.sh alpine/alpine_demo.sh           alpine/full_alpine_test.sh; do
     [ -f "$BASE_DIR/$f" ] && check "File: $f" "PASS" || \
         check "File: $f" "FAIL" "Missing"
 done

@@ -101,7 +101,7 @@ if [ ! -f "build.ninja" ]; then
         --disable-gtk --disable-sdl --disable-opengl \
         --enable-slirp 2>/dev/null
 fi
-make qemu-riscv64 -j$(nproc) 2>/dev/null
+make qemu-riscv64 qemu-system-riscv64 -j$(nproc) 2>/dev/null
 echo -e "${GREEN}    Built ✓${NC}"
 ln -sf "$QEMU_BIN" "$BASE_DIR/qemu-riscv64"
 
