@@ -237,6 +237,7 @@ musl dynamic linker patch — remaps `.text` of every loaded ELF at load time. C
 
 ## Author
 
+**Curtis Cole** — April 2026
 **Muhammad Bilal** — April 2026
 
 *"I knew my idea was real but I'm pretty sure everyone just thought I was crazy."* — Curtis Cole
